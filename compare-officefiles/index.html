@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Office File Diff</title>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      margin: 10px;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .diff-container {
+      flex: 1;
+      display: flex;
+      width: 100%;
+      height: calc(100vh - 300px);
+      box-sizing: border-box;
+    }
+
+    .diff-box {
+      width: 50%;
+      padding: 15px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    del {
+      background-color: #ffe6e6;
+      text-decoration: line-through;
+    }
+
+    ins {
+      background-color: #e6ffe6;
+      text-decoration: none;
+    }
+
+    .actions {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Compare Office Files (.docx / .xlsx / .pptx)</h2>
+
+  <div class="file-select">
+    <label>Select File 1:
+      <input type="file" id="file1" accept=".docx,.xlsx,.pptx">
+    </label>
+  </div>
+  <div class="file-select">
+    <label>Select File 2:
+      <input type="file" id="file2" accept=".docx,.xlsx,.pptx">
+    </label>
+  </div>
+
+  <label>
+    <input type="checkbox" id="showOnlyDiff"> Show only files with differences
+  </label>
+
+  <div>
+    <label><strong>Select common internal XML part:</strong></label><br>
+    <select id="entrySelector">
+      <option value="">-- Select a file part --</option>
+    </select>
+  </div>
+
+
+
+  <div class="actions">
+    <button id="downloadDiff">Download Diff as .txt</button>
+  </div>
+
+  <div class="diff-container">
+    <div class="diff-box" id="leftDiff"></div>
+    <div class="diff-box" id="rightDiff"></div>
+  </div>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="diff_match_patch.js"></script>
+  <script src="format_xml.js"></script>
+  <script src="script.js"></script>
+
+</body>
+
+</html>

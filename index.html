@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Tools Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    .tool {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .tool a {
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Developer Tools Dashboard</h1>
+  <div class="tools-grid">
+    <div class="tool"><a href="./compare-officefiles/index.html">Compare Office Files</a></div>
+    <div class="tool"><a href="./csv-viewer/index.html">Csv Viewer</a></div>
+    <div class="tool"><a href="./tool-3/index.html">Tool 3</a></div>
+    <!-- Add more tools as needed -->
+  </div>
+</body>
+
+</html>
