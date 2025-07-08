@@ -29,6 +29,7 @@
 
     button {
       margin-top: 10px;
+      margin-right: 5px;
       padding: 10px 20px;
       font-size: 1rem;
       background-color: #007BFF;
@@ -67,7 +68,6 @@
       background-color: #f9f9f9;
     }
 
-    /* Only value column wraps */
     .value-cell {
       word-break: break-word;
     }
@@ -83,7 +83,13 @@
   <h2>URL Query Parameter Extractor</h2>
   <textarea id="urlInput" placeholder="Paste your encoded URL here..."></textarea>
   <br />
-  <button onclick="decodeURL()">Decode</button>
+  <button onclick="decodeURL()">Extract</button>
+
+  <h3>Decoded URL</h3>
+  <textarea id="decodedURL" placeholder="Decoded URL will appear here..."></textarea>
+  <br />
+  <button onclick="decodeURIComponentText()">Decode</button>
+  <button onclick="encodeURIComponentText()">Encode</button>
 
   <div id="output"></div>
 
@@ -91,10 +97,14 @@
     function decodeURL() {
       const input = document.getElementById("urlInput").value.trim();
       const outputDiv = document.getElementById("output");
+      const decodedField = document.getElementById("decodedURL");
       outputDiv.innerHTML = "";
+      decodedField.value = "";
 
       try {
         const url = new URL(input);
+        decodedField.value = decodeURIComponent(input);
+
         const params = new URLSearchParams(url.search);
         const table = document.createElement("table");
 
@@ -119,6 +129,20 @@
       } catch (e) {
         outputDiv.innerHTML = "<p style='color: red;'>Invalid URL format. Please make sure it starts with https://</p>";
       }
+    }
+
+    function decodeURIComponentText() {
+      const field = document.getElementById("decodedURL");
+      try {
+        field.value = decodeURIComponent(field.value);
+      } catch {
+        alert("Invalid encoded string.");
+      }
+    }
+
+    function encodeURIComponentText() {
+      const field = document.getElementById("decodedURL");
+      field.value = encodeURIComponent(field.value);
     }
   </script>
 
