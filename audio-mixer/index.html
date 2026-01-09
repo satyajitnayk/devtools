@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audio Mixer (MP3 / WAV)</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="wrap">
+    <h1>Quick Audio Mixer</h1>
+
+    <div class="card grid grid-2">
+        <div>
+            <label>Lead audio</label>
+            <input id="leadFile" type="file" accept="audio/*" capture="microphone"/>
+            <div class="control">
+                <label>Lead gain (dB)</label>
+                <div class="range-row">
+                    <input id="leadDb" type="range" min="-24" max="24" value="20" step="1" />
+                    <input id="leadDbNum" type="number" value="20" step="1" />
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label>Background audio</label>
+            <input id="bgFile" type="file" accept="audio/*" capture="microphone"/>
+            <div class="control">
+                <label>Background gain (dB)</label>
+                <div class="range-row">
+                    <input id="bgDb" type="range" min="-36" max="12" value="-18" step="1" />
+                    <input id="bgDbNum" type="number" value="-18" step="1" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="grid grid-2">
+            <div class="control">
+                <label>Duration (seconds)</label>
+                <input id="durationSec" type="number" value="85" min="1" />
+                <div class="tiny">Default: 85s (1:25)</div>
+            </div>
+
+            <div class="control">
+                <label>Export format</label>
+                <select id="formatSel">
+                    <option value="mp3" selected>MP3 (recommended)</option>
+                    <option value="wav">WAV (lossless)</option>
+                </select>
+                <div class="row" style="margin-top:8px">
+                    <input id="normalize" type="checkbox" checked />
+                    <span class="tiny">Normalize & keep ~1 dB headroom</span>
+                </div>
+                <div class="row" style="margin-top:8px">
+                    <input id="mp3Kbps" type="number" value="192" min="96" max="320" step="1" />
+                    <span class="tiny">MP3 bitrate (kbps)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btnbar">
+            <button id="renderBtn" class="primary">Render & Export</button>
+            <button id="resetBtn">Reset</button>
+            <span id="status" class="hint"></span>
+        </div>
+
+        <div id="output" class="out" style="display:none">
+            <div id="summary" class="hint"></div>
+            <audio id="player" controls></audio>
+            <div style="margin-top:10px">
+                <a id="downloadLink">Download</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MP3 encoder (lamejs) -->
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>DOCX Header/Footer Remover</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      text-align: center;
+    }
+
+    input, button {
+      margin: 10px;
+      padding: 10px;
+    }
+
+    progress {
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+<h2>Remove Headers & Footers from DOCX Files</h2>
+<p>Upload a ZIP file containing .docx files:</p>
+<input type="file" id="zipInput" accept=".zip"/>
+<button id="processBtn">Process & Download</button>
+<p id="status"></p>
+<progress id="progress" value="0" max="100" hidden></progress>
+
+<script type="module">
+  import JSZip from "https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm";
+  import {XMLParser, XMLBuilder} from "https://cdn.jsdelivr.net/npm/fast-xml-parser@4.4.1/+esm";
+
+  const parser = new XMLParser({ignoreAttributes: false});
+  const builder = new XMLBuilder({ignoreAttributes: false, suppressEmptyNode: true});
+
+  async function loadXml(zip, path) {
+    if (!zip.files[path]) return null;
+    const xmlText = await zip.file(path).async("string");
+    return parser.parse(xmlText);
+  }
+
+  function saveXml(zip, path, obj) {
+    zip.file(path, builder.build(obj));
+  }
+
+  async function removeHeadersAndFooters(buffer) {
+    const zip = await JSZip.loadAsync(buffer);
+
+    // Remove header/footer XMLs
+    for (const filename of Object.keys(zip.files)) {
+      if (/^word\/(header|footer)\d*\.xml$/i.test(filename)) zip.remove(filename);
+    }
+
+    // Clean relationships (document.xml.rels)
+    const relsPath = "word/_rels/document.xml.rels";
+    const relsObj = await loadXml(zip, relsPath);
+    if (relsObj?.Relationships?.Relationship) {
+      const rels = Array.isArray(relsObj.Relationships.Relationship)
+              ? relsObj.Relationships.Relationship
+              : [relsObj.Relationships.Relationship];
+      relsObj.Relationships.Relationship = rels.filter(
+              r => !/header|footer/i.test(r["@_Type"] || "")
+      );
+      saveXml(zip, relsPath, relsObj);
+    }
+
+    // Clean header/footer refs in document.xml
+    const docXmlPath = "word/document.xml";
+    const docObj = await loadXml(zip, docXmlPath);
+    if (docObj?.["w:document"]?.["w:body"]) {
+      const body = docObj["w:document"]["w:body"];
+      const sectPr = body["w:sectPr"];
+      if (sectPr) {
+        for (const key of Object.keys(sectPr)) {
+          if (/w:(headerReference|footerReference)/.test(key)) delete sectPr[key];
+        }
+      }
+      saveXml(zip, docXmlPath, docObj);
+    }
+
+    // Clean header/footer overrides from [Content_Types].xml
+    const ctPath = "[Content_Types].xml";
+    const ctObj = await loadXml(zip, ctPath);
+    if (ctObj?.Types?.Override) {
+      const overrides = Array.isArray(ctObj.Types.Override)
+              ? ctObj.Types.Override
+              : [ctObj.Types.Override];
+      ctObj.Types.Override = overrides.filter(
+              o => !/\/word\/(header|footer)\d*\.xml$/i.test(o["@_PartName"])
+      );
+      saveXml(zip, ctPath, ctObj);
+    }
+
+    return await zip.generateAsync({type: "arraybuffer"});
+  }
+
+  async function processZip(inputFile) {
+    const status = document.getElementById("status");
+    const progress = document.getElementById("progress");
+    status.textContent = "Processing...";
+    progress.hidden = false;
+    progress.value = 0;
+
+    const inputZip = await JSZip.loadAsync(await inputFile.arrayBuffer());
+    const outputZip = new JSZip();
+
+    const docxFiles = Object.keys(inputZip.files).filter(
+            f => f.endsWith(".docx") && !/^__MACOSX\//.test(f) && !/\/\._/.test(f)
+    );
+    if (docxFiles.length === 0) {
+      status.textContent = "⚠️ No DOCX files found inside ZIP.";
+      progress.hidden = true;
+      return;
+    }
+
+    let processed = 0;
+    for (const name of docxFiles) {
+      try {
+        const fileBuffer = await inputZip.file(name).async("arraybuffer");
+        const cleanedBuffer = await removeHeadersAndFooters(fileBuffer);
+        outputZip.file(name, cleanedBuffer);
+        processed++;
+      } catch (err) {
+        console.warn(`Skipping ${name}: ${err.message}`);
+      }
+      progress.value = (processed / docxFiles.length) * 100;
+    }
+
+    const finalZip = await outputZip.generateAsync({type: "blob"});
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(finalZip);
+    link.download = "processed_docx.zip";
+    link.click();
+
+    status.textContent = `✅ Processed ${processed} / ${docxFiles.length} files successfully!`;
+    progress.hidden = true;
+  }
+
+  document.getElementById("processBtn").onclick = async () => {
+    const fileInput = document.getElementById("zipInput");
+    if (!fileInput.files.length) {
+      alert("Please upload a ZIP file first.");
+      return;
+    }
+    try {
+      await processZip(fileInput.files[0]);
+    } catch (err) {
+      document.getElementById("status").textContent = "❌ " + err.message;
+      console.error(err);
+    }
+  };
+</script>
+</body>
+</html>
