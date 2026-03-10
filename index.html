@@ -2,55 +2,138 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dev Tools Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Developer Tools</title>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      margin: 0;
-      padding: 2rem;
+
+    body{
+      font-family: system-ui;
+      background:#f4f6fb;
+      margin:0;
+      padding:40px;
     }
 
-    h1 {
-      text-align: center;
+    .container{
+      max-width:900px;
+      margin:auto;
     }
 
-    .tools-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      max-width: 800px;
-      margin: auto;
+    h1{
+      text-align:center;
+      margin-bottom:40px;
     }
 
-    .tool {
-      background: #fff;
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      text-align: center;
+    .category{
+      margin-bottom:40px;
     }
 
-    .tool a {
-      text-decoration: none;
-      color: #007bff;
-      font-weight: bold;
+    .category h2{
+      margin-bottom:15px;
+      color:#333;
     }
+
+    .tools-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:15px;
+    }
+
+    .tool{
+      background:white;
+      padding:18px;
+      border-radius:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+      transition:all .15s;
+    }
+
+    .tool:hover{
+      transform:translateY(-3px);
+      box-shadow:0 6px 14px rgba(0,0,0,0.12);
+    }
+
+    .tool a{
+      text-decoration:none;
+      color:#2563eb;
+      font-weight:600;
+    }
+
+    .tool small{
+      display:block;
+      margin-top:6px;
+      color:#666;
+    }
+
   </style>
 </head>
 
 <body>
-  <h1>Developer Tools Dashboard</h1>
-  <div class="tools-grid">
-    <div class="tool"><a href="./compare-officefiles/index.html">Compare Office Files</a></div>
-    <div class="tool"><a href="./csv-viewer/index.html">Csv Viewer</a></div>
-    <div class="tool"><a href="./url-query-param-extractor.html">Url Query Param Extractor</a></div>
-    <div class="tool"><a href="./remove-headers-footers.html">Remove Headers & footers From DOCX</a></div>
-    <div class="tool"><a href="./audio-mixer/index.html">Mix 2 Audio Files</a></div>
-    <!-- Add more tools as needed -->
-  </div>
-</body>
 
+<div class="container">
+
+  <h1>Developer Tools</h1>
+
+  <div class="category">
+    <h2>📄 Document Tools</h2>
+
+    <div class="tools-grid">
+      <div class="tool">
+        <a href="./compare-officefiles/index.html">
+          <div class="title">Compare Office Files</div>
+          <small>Diff DOCX / XLSX / PPTX</small>
+        </a>
+      </div>
+
+      <div class="tool">
+        <a href="./remove-headers-footers.html">
+          <div class="title">Remove Headers & Footers</div>
+          <small>Clean DOCX templates</small>
+        </a>
+      </div>
+
+      <div class="tool">
+        <a href="./pdf-widget-inspector.html">
+          <div class="title">PDF Widget Inspector</div>
+          <small>Debug PDF form widgets</small>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="category">
+    <h2>📊 Data Tools</h2>
+
+    <div class="tools-grid">
+      <div class="tool">
+        <a href="./csv-viewer/index.html">
+          <div class="title">CSV Viewer</div>
+          <small>Inspect CSV files</small>
+        </a>
+      </div>
+
+      <div class="tool">
+        <a href="./url-query-param-extractor.html">
+          <div class="title">URL Query Extractor</div>
+          <small>Parse URL parameters</small>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="category">
+    <h2>🔊 Media Tools</h2>
+
+    <div class="tools-grid">
+      <div class="tool">
+        <a href="./audio-mixer/index.html">
+          <div class="title">Audio Mixer</div>
+          <small>Mix two audio files</small>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
 </html>
