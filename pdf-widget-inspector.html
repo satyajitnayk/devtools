@@ -1,193 +1,214 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>PDF Widget Inspector</title>
+    <meta charset="UTF-8">
+    <title>PDF Widget Inspector</title>
 
-  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
-  <style>
+    <style>
 
-    body{
-      font-family: Arial, sans-serif;
-      background:#f3f4f6;
-      margin:0;
-      padding:40px;
-    }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 40px;
+        }
 
-    .app{
-      max-width:900px;
-      margin:auto;
-      background:white;
-      border-radius:12px;
-      padding:40px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.08);
+        .app {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 
-      display:flex;
-      flex-direction:column;
-      gap:25px;
-    }
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
 
-    h1{
-      margin:0;
-    }
+        h1 {
+            margin: 0;
+        }
 
-    .subtitle{
-      color:#6b7280;
-    }
+        .subtitle {
+            color: #6b7280;
+        }
 
-    .dropzone{
-      width:100%;
-      max-width:350px;
-      border:2px dashed #cbd5e1;
-      border-radius:10px;
-      padding:35px;
-      text-align:center;
-      cursor:pointer;
-      background:#fafafa;
-      transition:.2s;
-    }
+        .dropzone {
+            width: 100%;
+            max-width: 350px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 35px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafafa;
+            transition: .2s;
+        }
 
-    .dropzone:hover{
-      border-color:#6366f1;
-      background:#f5f6ff;
-    }
+        .dropzone:hover {
+            border-color: #6366f1;
+            background: #f5f6ff;
+        }
 
-    .dropzone input{
-      display:none;
-    }
+        .dropzone input {
+            display: none;
+        }
 
-    .upload-row{
-      display:flex;
-      justify-content:flex-start;
-    }
+        .upload-row {
+            display: flex;
+            justify-content: flex-start;
+        }
 
-    .status{
-      font-size:14px;
-      color:#555;
-    }
+        .status {
+            font-size: 14px;
+            color: #555;
+        }
 
-    .table-container{
-      border:1px solid #e5e7eb;
-      border-radius:8px;
-      overflow:hidden;
-    }
+        .table-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-    th{
-      background:#f1f5f9;
-      padding:14px;
-      text-align:left;
-    }
+        th {
+            background: #f1f5f9;
+            padding: 14px;
+            text-align: left;
+        }
 
-    td{
-      padding:14px;
-      border-top:1px solid #eee;
-    }
+        td {
+            padding: 14px;
+            border-top: 1px solid #eee;
+        }
 
-    .ref{
-      width:180px;
-      font-family:monospace;
-      color:#4f46e5;
-    }
+        .ref {
+            width: 180px;
+            font-family: monospace;
+            color: #4f46e5;
+        }
 
-    .empty{
-      text-align:center;
-      padding:30px;
-      color:#9ca3af;
-    }
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #9ca3af;
+        }
 
-  </style>
+    </style>
 </head>
 
 <body>
 
 <div class="app">
 
-  <h1>PDF Widget Inspector</h1>
-  <div class="subtitle">Upload a PDF to inspect widget references and field names</div>
+    <h1>PDF Widget Inspector</h1>
+    <div class="subtitle">Upload a PDF to inspect widget references and field names</div>
 
-  <div class="upload-row">
-    <label class="dropzone">
-      Click or Drop PDF Here
-      <input type="file" id="fileInput" accept="application/pdf">
-    </label>
-  </div>
+    <div class="upload-row">
+        <label class="dropzone">
+            Click or Drop PDF Here
+            <input type="file" id="fileInput" accept="application/pdf">
+        </label>
+    </div>
 
-  <div class="status" id="status"></div>
+    <div class="status" id="status"></div>
 
-  <div class="table-container">
-    <table>
-      <thead>
-      <tr>
-        <th style="width:180px">Widget Ref</th>
-        <th>Field Name</th>
-      </tr>
-      </thead>
-      <tbody id="results">
-      <tr>
-        <td colspan="2" class="empty">No PDF loaded</td>
-      </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="table-container">
+        <table>
+            <thead>
+            <tr>
+                <th style="width:180px">Widget Ref</th>
+                <th>Field Name</th>
+            </tr>
+            </thead>
+            <tbody id="results">
+            <tr>
+                <td colspan="2" class="empty">No PDF loaded</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 
 </div>
 
 <script>
 
-  const fileInput = document.getElementById("fileInput")
-  const results = document.getElementById("results")
-  const status = document.getElementById("status")
+    const fileInput = document.getElementById("fileInput")
+    const results = document.getElementById("results")
+    const status = document.getElementById("status")
 
-  fileInput.addEventListener("change", async (e)=>{
+    fileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0]
+        if(file) await processPDF(file)
+    });
 
-    results.innerHTML=""
-    status.textContent="Processing PDF..."
+    const dropzone = document.querySelector(".dropzone")
 
-    const file = e.target.files[0]
-    if(!file) return
+    dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault()
+        dropzone.style.borderColor = "#6366f1"
+    })
 
-    const buffer = await file.arrayBuffer()
+    dropzone.addEventListener("dragleave", () => {
+        dropzone.style.borderColor = "#cbd5e1"
+    })
 
-    const { PDFDocument } = PDFLib
-    const pdfDoc = await PDFDocument.load(buffer)
+    dropzone.addEventListener("drop", async (e) => {
+        e.preventDefault()
+        dropzone.style.borderColor = "#cbd5e1"
 
-    const fields = pdfDoc.getForm().getFields()
+        const file = e.dataTransfer.files[0]
+        if (!file || file.type !== "application/pdf") return
 
-    let rows=""
+        await processPDF(file)
+    })
 
-    for(const field of fields){
+    async function processPDF(file) {
 
-      const fieldName = field.getName()
+        results.innerHTML = ""
+        status.textContent = "Processing PDF..."
 
-      for(const widget of field.acroField.getWidgets()){
+        const buffer = await file.arrayBuffer()
 
-        const ref = pdfDoc.context.getObjectRef(widget.dict)
+        const {PDFDocument} = PDFLib
+        const pdfDoc = await PDFDocument.load(buffer)
 
-        if(!ref) continue
+        const fields = pdfDoc.getForm().getFields()
 
-        rows+=`
+        let rows = ""
+
+        for (const field of fields) {
+
+            const fieldName = field.getName()
+
+            for (const widget of field.acroField.getWidgets()) {
+
+                const ref = pdfDoc.context.getObjectRef(widget.dict)
+
+                if (!ref) continue
+
+                rows += `
 <tr>
 <td class="ref">${ref.toString()}</td>
 <td>${fieldName}</td>
-</tr>
-`
-      }
+</tr>`
+            }
+        }
+
+        if (rows === "") {
+            rows = `<tr><td colspan="2" class="empty">No widgets found</td></tr>`
+        }
+
+        results.innerHTML = rows
+        status.textContent = `${fields.length} fields detected`
     }
-
-    if(rows===""){
-      rows=`<tr><td colspan="2" class="empty">No widgets found</td></tr>`
-    }
-
-    results.innerHTML=rows
-    status.textContent=`${fields.length} fields detected`
-
-  })
 
 </script>
 
