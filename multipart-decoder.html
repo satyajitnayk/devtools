@@ -257,7 +257,78 @@
     </main>
 
     <script>
-        function inferBoundary(text) {
+        const CRLF = new Uint8Array([13, 10]);
+        const DOUBLE_CRLF = new Uint8Array([13, 10, 13, 10]);
+
+        function setStatus(message, type) {
+            const status = document.getElementById("status");
+            status.textContent = message;
+            status.className = "status " + type;
+        }
+
+        function clearStatus() {
+            const status = document.getElementById("status");
+            status.textContent = "";
+            status.className = "status";
+        }
+
+        function bytesToText(bytes) {
+            return new TextDecoder("utf-8").decode(bytes);
+        }
+
+        function latin1BytesToText(bytes) {
+            return new TextDecoder("latin1").decode(bytes);
+        }
+
+        function textToBytes(text) {
+            return new TextEncoder().encode(text);
+        }
+
+        function indexOfBytes(source, search, start = 0) {
+            outer:
+            for (let i = start; i <= source.length - search.length; i++) {
+                for (let j = 0; j < search.length; j++) {
+                    if (source[i + j] !== search[j]) {
+                        continue outer;
+                    }
+                }
+                return i;
+            }
+
+            return -1;
+        }
+
+        function concatBytes(...arrays) {
+            const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+            const result = new Uint8Array(totalLength);
+
+            let offset = 0;
+            for (const arr of arrays) {
+                result.set(arr, offset);
+                offset += arr.length;
+            }
+
+            return result;
+        }
+
+        function trimPartBytes(bytes) {
+            let start = 0;
+            let end = bytes.length;
+
+            // Remove leading CRLF after boundary
+            if (bytes[0] === 13 && bytes[1] === 10) {
+                start = 2;
+            }
+
+            // Remove trailing CRLF before next boundary
+            if (bytes[end - 2] === 13 && bytes[end - 1] === 10) {
+                end -= 2;
+            }
+
+            return bytes.slice(start, end);
+        }
+
+        function inferBoundaryFromText(text) {
             const contentTypeMatch = text.match(
                 /content-type:\s*multipart\/[^;\r\n]+;\s*boundary=(?:"([^"]+)"|([^;\r\n]+))/i
             );
@@ -283,16 +354,56 @@
             return null;
         }
 
-        function setStatus(message, type) {
-            const status = document.getElementById("status");
-            status.textContent = message;
-            status.className = "status " + type;
+        function splitMultipartBytes(buffer, boundary) {
+            const bytes = new Uint8Array(buffer);
+            const boundaryBytes = textToBytes("--" + boundary);
+
+            const parts = [];
+            let position = indexOfBytes(bytes, boundaryBytes);
+
+            while (position !== -1) {
+                const partStart = position + boundaryBytes.length;
+
+                // Final boundary: --boundary--
+                if (bytes[partStart] === 45 && bytes[partStart + 1] === 45) {
+                    break;
+                }
+
+                const nextBoundary = indexOfBytes(bytes, boundaryBytes, partStart);
+
+                if (nextBoundary === -1) {
+                    break;
+                }
+
+                const rawPart = bytes.slice(partStart, nextBoundary);
+                const cleanPart = trimPartBytes(rawPart);
+
+                if (cleanPart.length) {
+                    parts.push(cleanPart);
+                }
+
+                position = nextBoundary;
+            }
+
+            return parts;
         }
 
-        function clearStatus() {
-            const status = document.getElementById("status");
-            status.textContent = "";
-            status.className = "status";
+        function parsePart(partBytes) {
+            const separatorIndex = indexOfBytes(partBytes, DOUBLE_CRLF);
+
+            if (separatorIndex === -1) {
+                return null;
+            }
+
+            const headerBytes = partBytes.slice(0, separatorIndex);
+            const bodyBytes = partBytes.slice(separatorIndex + DOUBLE_CRLF.length);
+
+            const headers = latin1BytesToText(headerBytes);
+
+            return {
+                headers,
+                bodyBytes
+            };
         }
 
         function getHeaderValue(headers, name) {
@@ -301,8 +412,11 @@
         }
 
         function getFilename(headers, fallback) {
+            const contentDisposition = getHeaderValue(headers, "content-disposition");
+
             return (
-                headers.match(/filename="?([^"\r\n;]+)"?/i)?.[1] ||
+                contentDisposition.match(/filename\*=(?:UTF-8'')?([^;\r\n]+)/i)?.[1] ||
+                contentDisposition.match(/filename="?([^"\r\n;]+)"?/i)?.[1] ||
                 headers.match(/name="?([^"\r\n;]+)"?/i)?.[1] ||
                 fallback
             );
@@ -311,7 +425,7 @@
         function createDownloadLink(blob, filename, label) {
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = filename;
+            a.download = decodeURIComponent(filename);
             a.className = "download";
             a.textContent = label;
             return a;
@@ -335,13 +449,13 @@
 
             const buffer = await file.arrayBuffer();
 
-            // latin1 keeps byte values mapped 1:1 into characters.
-            const text = new TextDecoder("latin1").decode(buffer);
+            // Only used for boundary inference, not for binary reconstruction.
+            const responseTextPreview = latin1BytesToText(new Uint8Array(buffer).slice(0, 10000));
 
             let boundary = document.getElementById("boundary").value.trim();
 
             if (!boundary) {
-                boundary = inferBoundary(text);
+                boundary = inferBoundaryFromText(responseTextPreview);
             }
 
             if (!boundary) {
@@ -351,11 +465,9 @@
                 return;
             }
 
-            const parts = text
-                .split("--" + boundary)
-                .filter(part => part.trim() && !part.trim().startsWith("--"));
+            const rawParts = splitMultipartBytes(buffer, boundary);
 
-            if (!parts.length) {
+            if (!rawParts.length) {
                 out.className = "empty";
                 out.textContent = "No multipart sections found.";
                 setStatus("Boundary found, but no valid parts were detected.", "error");
@@ -363,20 +475,16 @@
             }
 
             setStatus(`Using boundary: ${boundary}`, "success");
-            partsCount.textContent = `${parts.length} part${parts.length > 1 ? "s" : ""}`;
+            partsCount.textContent = `${rawParts.length} part${rawParts.length > 1 ? "s" : ""}`;
 
-            parts.forEach((part, index) => {
-                const sep = part.indexOf("\r\n\r\n");
+            rawParts.forEach((rawPart, index) => {
+                const parsed = parsePart(rawPart);
 
-                if (sep === -1) {
+                if (!parsed) {
                     return;
                 }
 
-                const headers = part.slice(0, sep).trim();
-                let body = part.slice(sep + 4);
-
-                // Remove trailing CRLF before the next boundary.
-                body = body.replace(/\r\n$/, "");
+                const { headers, bodyBytes } = parsed;
 
                 const contentType =
                     getHeaderValue(headers, "content-type") ||
@@ -412,13 +520,13 @@
                 partEl.appendChild(headersPre);
 
                 if (isJson) {
-                    let jsonText = body;
+                    let jsonText = bytesToText(bodyBytes);
 
                     try {
-                        const parsed = JSON.parse(body);
-                        jsonText = JSON.stringify(parsed, null, 2);
+                        const parsedJson = JSON.parse(jsonText);
+                        jsonText = JSON.stringify(parsedJson, null, 2);
                     } catch (err) {
-                        // Keep original body if JSON parsing fails.
+                        // Keep original JSON text if parsing fails.
                     }
 
                     if (!filename.endsWith(".json")) {
@@ -442,13 +550,11 @@
                     partEl.appendChild(preview);
                     partEl.appendChild(download);
                 } else {
-                    const bytes = new Uint8Array([...body].map(c => c.charCodeAt(0)));
-
                     if (!filename.includes(".")) {
                         filename += ".bin";
                     }
 
-                    const blob = new Blob([bytes], {
+                    const blob = new Blob([bodyBytes], {
                         type: contentType
                     });
 
