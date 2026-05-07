@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multipart Decoder Tool</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 32px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            color: #111827;
+        }
+
+        .header p {
+            margin-top: 10px;
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #ffffff;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .hint {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .status {
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-top: 18px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            display: block;
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status.error {
+            display: block;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .parts-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .parts-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #3730a3;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .part {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+            background: #ffffff;
+        }
+
+        .part-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .part-title h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #111827;
+        }
+
+        .content-type {
+            font-size: 12px;
+            color: #374151;
+            background: #f3f4f6;
+            padding: 5px 8px;
+            border-radius: 999px;
+            word-break: break-all;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            overflow: auto;
+        }
+
+        .headers {
+            margin-bottom: 12px;
+        }
+
+        .json-preview {
+            max-height: 320px;
+            overflow: auto;
+            margin-bottom: 12px;
+        }
+
+        .download {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .download:hover {
+            background: #1d4ed8;
+        }
+
+        .empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 24px;
+            border: 1px dashed #d1d5db;
+            border-radius: 12px;
+            background: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <section class="header">
+            <h1>Multipart Decode Tool</h1>
+            <p>
+                Decode <strong>multipart/mixed</strong> responses, preview JSON parts,
+                and download JSON or binary files directly in your browser.
+            </p>
+        </section>
+
+        <section class="card">
+            <div class="form-grid">
+                <div>
+                    <label for="boundary">Boundary</label>
+                    <input id="boundary" type="text" placeholder="Optional. Example: abc123" />
+                    <div class="hint">
+                        Leave this empty to automatically infer the boundary from the response.
+                    </div>
+                </div>
+
+                <div>
+                    <label for="file">Raw multipart response file</label>
+                    <input id="file" type="file" />
+                    <div class="hint">
+                        Upload a saved raw response file. This tool runs locally in your browser.
+                    </div>
+                </div>
+            </div>
+
+            <div id="status" class="status"></div>
+        </section>
+
+        <section class="card">
+            <div class="parts-header">
+                <h2>Decoded Parts</h2>
+                <span id="partsCount" class="badge">0 parts</span>
+            </div>
+
+            <div id="out" class="empty">
+                Upload a raw multipart response file to view decoded parts here.
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const CRLF = new Uint8Array([13, 10]);
+        const DOUBLE_CRLF = new Uint8Array([13, 10, 13, 10]);
+
+        function setStatus(message, type) {
+            const status = document.getElementById("status");
+            status.textContent = message;
+            status.className = "status " + type;
+        }
+
+        function clearStatus() {
+            const status = document.getElementById("status");
+            status.textContent = "";
+            status.className = "status";
+        }
+
+        function bytesToText(bytes) {
+            return new TextDecoder("utf-8").decode(bytes);
+        }
+
+        function latin1BytesToText(bytes) {
+            return new TextDecoder("latin1").decode(bytes);
+        }
+
+        function textToBytes(text) {
+            return new TextEncoder().encode(text);
+        }
+
+        function indexOfBytes(source, search, start = 0) {
+            outer:
+            for (let i = start; i <= source.length - search.length; i++) {
+                for (let j = 0; j < search.length; j++) {
+                    if (source[i + j] !== search[j]) {
+                        continue outer;
+                    }
+                }
+                return i;
+            }
+
+            return -1;
+        }
+
+        function concatBytes(...arrays) {
+            const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+            const result = new Uint8Array(totalLength);
+
+            let offset = 0;
+            for (const arr of arrays) {
+                result.set(arr, offset);
+                offset += arr.length;
+            }
+
+            return result;
+        }
+
+        function trimPartBytes(bytes) {
+            let start = 0;
+            let end = bytes.length;
+
+            // Remove leading CRLF after boundary
+            if (bytes[0] === 13 && bytes[1] === 10) {
+                start = 2;
+            }
+
+            // Remove trailing CRLF before next boundary
+            if (bytes[end - 2] === 13 && bytes[end - 1] === 10) {
+                end -= 2;
+            }
+
+            return bytes.slice(start, end);
+        }
+
+        function inferBoundaryFromText(text) {
+            const contentTypeMatch = text.match(
+                /content-type:\s*multipart\/[^;\r\n]+;\s*boundary=(?:"([^"]+)"|([^;\r\n]+))/i
+            );
+
+            if (contentTypeMatch) {
+                return (contentTypeMatch[1] || contentTypeMatch[2]).trim();
+            }
+
+            const lines = text.split(/\r?\n/);
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+
+                if (
+                    trimmed.startsWith("--") &&
+                    trimmed.length > 2 &&
+                    !trimmed.endsWith("--")
+                ) {
+                    return trimmed.slice(2);
+                }
+            }
+
+            return null;
+        }
+
+        function splitMultipartBytes(buffer, boundary) {
+            const bytes = new Uint8Array(buffer);
+            const boundaryBytes = textToBytes("--" + boundary);
+
+            const parts = [];
+            let position = indexOfBytes(bytes, boundaryBytes);
+
+            while (position !== -1) {
+                const partStart = position + boundaryBytes.length;
+
+                // Final boundary: --boundary--
+                if (bytes[partStart] === 45 && bytes[partStart + 1] === 45) {
+                    break;
+                }
+
+                const nextBoundary = indexOfBytes(bytes, boundaryBytes, partStart);
+
+                if (nextBoundary === -1) {
+                    break;
+                }
+
+                const rawPart = bytes.slice(partStart, nextBoundary);
+                const cleanPart = trimPartBytes(rawPart);
+
+                if (cleanPart.length) {
+                    parts.push(cleanPart);
+                }
+
+                position = nextBoundary;
+            }
+
+            return parts;
+        }
+
+        function parsePart(partBytes) {
+            const separatorIndex = indexOfBytes(partBytes, DOUBLE_CRLF);
+
+            if (separatorIndex === -1) {
+                return null;
+            }
+
+            const headerBytes = partBytes.slice(0, separatorIndex);
+            const bodyBytes = partBytes.slice(separatorIndex + DOUBLE_CRLF.length);
+
+            const headers = latin1BytesToText(headerBytes);
+
+            return {
+                headers,
+                bodyBytes
+            };
+        }
+
+        function getHeaderValue(headers, name) {
+            const regex = new RegExp(name + ":\\s*([^\\r\\n]+)", "i");
+            return headers.match(regex)?.[1]?.trim() || "";
+        }
+
+        function getFilename(headers, fallback) {
+            const contentDisposition = getHeaderValue(headers, "content-disposition");
+
+            return (
+                contentDisposition.match(/filename\*=(?:UTF-8'')?([^;\r\n]+)/i)?.[1] ||
+                contentDisposition.match(/filename="?([^"\r\n;]+)"?/i)?.[1] ||
+                headers.match(/name="?([^"\r\n;]+)"?/i)?.[1] ||
+                fallback
+            );
+        }
+
+        function createDownloadLink(blob, filename, label) {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = decodeURIComponent(filename);
+            a.className = "download";
+            a.textContent = label;
+            return a;
+        }
+
+        document.getElementById("file").addEventListener("change", async (e) => {
+            clearStatus();
+
+            const file = e.target.files[0];
+            const out = document.getElementById("out");
+            const partsCount = document.getElementById("partsCount");
+
+            out.innerHTML = "";
+            out.className = "";
+            partsCount.textContent = "0 parts";
+
+            if (!file) {
+                setStatus("Please select a raw multipart response file.", "error");
+                return;
+            }
+
+            const buffer = await file.arrayBuffer();
+
+            // Only used for boundary inference, not for binary reconstruction.
+            const responseTextPreview = latin1BytesToText(new Uint8Array(buffer).slice(0, 10000));
+
+            let boundary = document.getElementById("boundary").value.trim();
+
+            if (!boundary) {
+                boundary = inferBoundaryFromText(responseTextPreview);
+            }
+
+            if (!boundary) {
+                out.className = "empty";
+                out.textContent = "Could not decode the response.";
+                setStatus("Could not infer boundary. Please enter it manually.", "error");
+                return;
+            }
+
+            const rawParts = splitMultipartBytes(buffer, boundary);
+
+            if (!rawParts.length) {
+                out.className = "empty";
+                out.textContent = "No multipart sections found.";
+                setStatus("Boundary found, but no valid parts were detected.", "error");
+                return;
+            }
+
+            setStatus(`Using boundary: ${boundary}`, "success");
+            partsCount.textContent = `${rawParts.length} part${rawParts.length > 1 ? "s" : ""}`;
+
+            rawParts.forEach((rawPart, index) => {
+                const parsed = parsePart(rawPart);
+
+                if (!parsed) {
+                    return;
+                }
+
+                const { headers, bodyBytes } = parsed;
+
+                const contentType =
+                    getHeaderValue(headers, "content-type") ||
+                    "application/octet-stream";
+
+                let filename = getFilename(headers, `part-${index + 1}`);
+
+                const isJson =
+                    contentType.includes("application/json") ||
+                    contentType.includes("+json");
+
+                const partEl = document.createElement("div");
+                partEl.className = "part";
+
+                const title = document.createElement("div");
+                title.className = "part-title";
+
+                const h3 = document.createElement("h3");
+                h3.textContent = `Part ${index + 1}`;
+
+                const typeBadge = document.createElement("span");
+                typeBadge.className = "content-type";
+                typeBadge.textContent = contentType;
+
+                title.appendChild(h3);
+                title.appendChild(typeBadge);
+
+                const headersPre = document.createElement("pre");
+                headersPre.className = "headers";
+                headersPre.textContent = headers;
+
+                partEl.appendChild(title);
+                partEl.appendChild(headersPre);
+
+                if (isJson) {
+                    let jsonText = bytesToText(bodyBytes);
+
+                    try {
+                        const parsedJson = JSON.parse(jsonText);
+                        jsonText = JSON.stringify(parsedJson, null, 2);
+                    } catch (err) {
+                        // Keep original JSON text if parsing fails.
+                    }
+
+                    if (!filename.endsWith(".json")) {
+                        filename += ".json";
+                    }
+
+                    const preview = document.createElement("pre");
+                    preview.className = "json-preview";
+                    preview.textContent = jsonText;
+
+                    const blob = new Blob([jsonText], {
+                        type: "application/json"
+                    });
+
+                    const download = createDownloadLink(
+                        blob,
+                        filename,
+                        `Download ${filename}`
+                    );
+
+                    partEl.appendChild(preview);
+                    partEl.appendChild(download);
+                } else {
+                    if (!filename.includes(".")) {
+                        filename += ".bin";
+                    }
+
+                    const blob = new Blob([bodyBytes], {
+                        type: contentType
+                    });
+
+                    const download = createDownloadLink(
+                        blob,
+                        filename,
+                        `Download ${filename}`
+                    );
+
+                    partEl.appendChild(download);
+                }
+
+                out.appendChild(partEl);
+            });
+        });
+    </script>
+</body>
+
+</html>
