@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -21,8 +21,10 @@ export default function App() {
 
     const [activePdf, setActivePdf] = useState(null);
     const [activeFields, setActiveFields] = useState([]);
+    const [renderId, setRenderId] = useState(0);
     const [numPages, setNumPages] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
+    const activeRenderId = useRef(0);
 
     // Track runtime dimensions of each loaded page { [pageNum]: { width, height } }
     const [pageDimensions, setPageDimensions] = useState({});
@@ -47,6 +49,11 @@ export default function App() {
             if (!Array.isArray(parsedJson)) {
                 throw new Error('Coordinates configurations must be structured as a JSON Array [ ... ].');
             }
+            const nextRenderId = activeRenderId.current + 1;
+            activeRenderId.current = nextRenderId;
+            setRenderId(nextRenderId);
+            setNumPages(null);
+            setPageDimensions({});
             setActivePdf(pdfFile);
             setActiveFields(parsedJson);
         } catch (err) {
@@ -54,12 +61,14 @@ export default function App() {
         }
     }
 
-    function onDocumentLoadSuccess({ numPages }) {
+    function onDocumentLoadSuccess({ numPages }, loadedRenderId) {
+        if (loadedRenderId !== activeRenderId.current) return;
         setNumPages(numPages);
     }
 
     // Capture the original PDF internal dimensions (points) when the page component initializes
-    function onPageLoadSuccess(page) {
+    function onPageLoadSuccess(page, loadedRenderId) {
+        if (loadedRenderId !== activeRenderId.current) return;
         const { pageNumber, originalWidth, originalHeight } = page;
         setPageDimensions(prev => ({
             ...prev,
@@ -94,12 +103,16 @@ export default function App() {
 
             <div style={styles.viewerPane}>
                 {activePdf ? (
-                    <Document file={activePdf} onLoadSuccess={onDocumentLoadSuccess}>
-                        {Array.from(new Array(numPages), (el, index) => {
+                    <Document
+                        key={renderId}
+                        file={activePdf}
+                        onLoadSuccess={(pdf) => onDocumentLoadSuccess(pdf, renderId)}
+                        onLoadError={(err) => setErrorMsg(`Could not load PDF: ${err.message}`)}
+                    >
+                        {typeof numPages === 'number' && Array.from({ length: numPages }, (el, index) => {
                             const pageNumber = index + 1;
                             const pageFields = activeFields.filter(f => f.page === pageNumber);
                             const origDim = pageDimensions[pageNumber];
-                            console.log("original Dim", origDim)
                             return (
                                 <div
                                     key={pageNumber}
@@ -117,7 +130,8 @@ export default function App() {
                                         height={origDim ? origDim.height : undefined}
                                         renderTextLayer={false}
                                         renderAnnotationLayer={false}
-                                        onLoadSuccess={onPageLoadSuccess}
+                                        onLoadSuccess={(page) => onPageLoadSuccess(page, renderId)}
+                                        onLoadError={(err) => setErrorMsg(`Could not load page ${pageNumber}: ${err.message}`)}
                                     />
 
                                     {/* Only calculate and display overlays once native page parameters are registered */}
