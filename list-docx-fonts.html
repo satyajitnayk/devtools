@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>DOCX Font Inspector</title>
+ <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js"></script>
+ <style>
+     :root {
+         --bg-color: #f4f7f6;
+         --card-bg: #ffffff;
+         --text-color: #333333;
+         --primary-color: #4a90e2;
+         --border-color: #e1e4e8;
+     }
+     body {
+         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         background-color: var(--bg-color);
+         color: var(--text-color);
+         margin: 0;
+         padding: 40px 20px;
+         display: flex;
+         justify-content: center;
+     }
+     .container {
+         width: 100%;
+         max-width: 650px;
+         background: var(--card-bg);
+         padding: 30px;
+         border-radius: 12px;
+         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+     }
+     h1 {
+         font-size: 24px;
+         margin-top: 0;
+         margin-bottom: 8px;
+         color: #1a1a1a;
+     }
+     p.subtitle {
+         color: #666;
+         margin-bottom: 24px;
+         font-size: 14px;
+     }
+     .dropzone {
+         border: 2px dashed var(--primary-color);
+         padding: 30px 20px;
+         border-radius: 8px;
+         text-align: center;
+         background: #f8faff;
+         cursor: pointer;
+         transition: background 0.2s;
+     }
+     .dropzone:hover {
+         background: #f0f4fe;
+     }
+     .dropzone input {
+         display: none;
+     }
+     .dropzone p {
+         margin: 0;
+         font-size: 16px;
+         color: #444;
+     }
+     .dropzone span {
+         font-size: 13px;
+         color: #888;
+         display: block;
+         margin-top: 6px;
+     }
+     .error {
+         color: #d9383a;
+         background: #fff5f5;
+         padding: 12px;
+         border-radius: 6px;
+         margin-top: 20px;
+         display: none;
+         font-size: 14px;
+         border: 1px solid #fecdcd;
+     }
+     .results {
+         margin-top: 30px;
+         display: none;
+     }
+     .file-info {
+         font-size: 14px;
+         font-weight: bold;
+         margin-bottom: 16px;
+         padding-bottom: 8px;
+         border-bottom: 1px solid var(--border-color);
+     }
+     table {
+         width: 100%;
+         border-collapse: collapse;
+         margin-top: 10px;
+     }
+     th, td {
+         text-align: left;
+         padding: 12px;
+         border-bottom: 1px solid var(--border-color);
+         font-size: 14px;
+     }
+     th {
+         background-color: #fafafa;
+         font-weight: 600;
+         color: #555;
+     }
+     .badge {
+         display: inline-block;
+         padding: 4px 8px;
+         border-radius: 4px;
+         font-size: 11px;
+         font-weight: bold;
+         text-transform: uppercase;
+     }
+     .badge.yes {
+         background-color: #e6f4ea;
+         color: #137333;
+     }
+     .badge.no {
+         background-color: #f1f3f4;
+         color: #5f6368;
+     }
+ </style>
+</head>
+<body>
+
+<div class="container">
+ <h1>DOCX Font Inspector</h1>
+ <p class="subtitle">Upload a Word document to analyze declared fonts and verify embedded status completely locally.</p>
+
+ <div class="dropzone" id="dropzone">
+  <p>Click to select or drag & drop a <strong>.docx</strong> file here</p>
+  <span>Supports standard Word XML files</span>
+  <input type="file" id="fileInput" accept=".docx">
+ </div>
+
+ <div class="error" id="errorBlock"></div>
+
+ <div class="results" id="resultsBlock">
+  <div class="file-info" id="fileInfo"></div>
+  <table>
+   <thead>
+   <tr>
+    <th>Font Name</th>
+    <th>Embedded Status</th>
+   </tr>
+   </thead>
+   <tbody id="fontTableBody">
+   <!-- Rows will be injected here dynamically -->
+   </tbody>
+  </table>
+ </div>
+</div>
+
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const errorBlock = document.getElementById('errorBlock');
+    const resultsBlock = document.getElementById('resultsBlock');
+    const fileInfo = document.getElementById('fileInfo');
+    const fontTableBody = document.getElementById('fontTableBody');
+
+    // Trigger click on file input when clicking dropzone
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    // Handle Drag & Drop behavior
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#f0f4fe';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.background = '#f8faff';
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.background = '#f8faff';
+        if (e.dataTransfer.files.length > 0) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    // Handle standard file selection
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    function showError(msg) {
+        errorBlock.textContent = msg;
+        errorBlock.style.display = 'block';
+        resultsBlock.style.display = 'none';
+    }
+
+    function handleFile(file) {
+        // Clear previous runs
+        errorBlock.style.display = 'none';
+        resultsBlock.style.display = 'none';
+        fontTableBody.innerHTML = '';
+
+        if (!file.name.endsWith('.docx')) {
+            showError('Please upload a valid document with a .docx extension.');
+            return;
+        }
+
+        fileInfo.textContent = `Analyzing: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const arrayBuffer = e.target.result;
+
+            // Open the zip package using JSZip
+            JSZip.loadAsync(arrayBuffer)
+                .then(function(zip) {
+                    // Font records reside within word/fontTable.xml
+                    const fontTableFile = zip.file("word/fontTable.xml");
+                    if (!fontTableFile) {
+                        showError('Could not find word/fontTable.xml inside the document. The file might be corrupted.');
+                        return;
+                    }
+                    return fontTableFile.async("string");
+                })
+                .then(function(xmlString) {
+                    if (!xmlString) return;
+                    parseFontXML(xmlString);
+                })
+                .catch(function(err) {
+                    showError('Failed parsing the zip contents. Make sure it is an unencrypted .docx archive.');
+                    console.error(err);
+                });
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function parseFontXML(xmlText) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+        // Find all font nodes (<w:font>)
+        // We use elementsByTagNameNS or fallback to localName to avoid namespace issues
+        const fonts = xmlDoc.getElementsByTagNameNS("*", "font") || xmlDoc.getElementsByTagName("w:font");
+
+        if (fonts.length === 0) {
+            showError('No declared fonts found in fontTable.xml.');
+            return;
+        }
+
+        const fontList = [];
+
+        for (let i = 0; i < fonts.length; i++) {
+            const fontNode = fonts[i];
+            const fontName = fontNode.getAttribute("w:name");
+
+            if (!fontName) continue;
+
+            // Check if there are child elements signaling structural font embeds
+            // Elements typically look like: <w:embedRegular>, <w:embedBold>, <w:embedItalic>, <w:embedBoldItalic>
+            let isEmbedded = false;
+            const children = fontNode.childNodes;
+            for (let j = 0; j < children.length; j++) {
+                if (children[j].nodeType === 1 && children[j].localName.startsWith('embed')) {
+                    isEmbedded = true;
+                    break;
+                }
+            }
+
+            fontList.push({ name: fontName, embedded: isEmbedded });
+        }
+
+        // Render the results sorting alphabetically by name
+        fontList.sort((a, b) => a.name.localeCompare(b.name));
+
+        fontList.forEach(font => {
+            const row = document.createElement('tr');
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = font.name;
+
+            const statusCell = document.createElement('td');
+            const badge = document.createElement('span');
+            badge.className = `badge ${font.embedded ? 'yes' : 'no'}`;
+            badge.textContent = font.embedded ? 'Embedded' : 'System Default';
+            statusCell.appendChild(badge);
+
+            row.appendChild(nameCell);
+            row.appendChild(statusCell);
+            fontTableBody.appendChild(row);
+        });
+
+        resultsBlock.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
