@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1" />
+  <title>PDF Page Inspector</title>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #202938;
+    }
+    .upload {
+      padding: 30px;
+      border: 2px dashed #a4b0c2;
+      border-radius: 12px;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th { background: #f2f5f9; }
+    .scroll { overflow-x: auto; }
+    pre {
+      background: #f2f5f9;
+      padding: 15px;
+      border-radius: 8px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>PDF Page Inspector</h1>
+
+  <div class="upload">
+    <input type="file" id="pdfInput"
+           accept="application/pdf,.pdf" />
+  </div>
+
+  <div id="summary"></div>
+  <div class="scroll">
+    <table id="pageTable" hidden>
+      <thead>
+        <tr>
+          <th>Page</th>
+          <th>Width (pt)</th>
+          <th>Height (pt)</th>
+          <th>Width (mm)</th>
+          <th>Height (mm)</th>
+          <th>Orientation</th>
+          <th>Rotation</th>
+          <th>Aspect ratio</th>
+        </tr>
+      </thead>
+      <tbody id="pageRows"></tbody>
+    </table>
+  </div>
+
+  <h2>Selected page details</h2>
+  <pre id="details">Select a page to inspect.</pre>
+
+  <script>
+    const input = document.getElementById("pdfInput");
+    const rows = document.getElementById("pageRows");
+    const details = document.getElementById("details");
+    const summary = document.getElementById("summary");
+    const table = document.getElementById("pageTable");
+
+    const toMm = pt => +(pt * 25.4 / 72).toFixed(2);
+    const round = n => +n.toFixed(2);
+
+    input.addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const pdf = await PDFLib.PDFDocument.load(buffer, {
+          updateMetadata: false
+        });
+
+        const pages = pdf.getPages();
+        rows.replaceChildren();
+        table.hidden = false;
+
+        summary.textContent =
+          `${file.name} — ${pages.length} pages`;
+
+        pages.forEach((page, index) => {
+          const mediaBox = page.getMediaBox();
+          const cropBox = page.getCropBox();
+          const bleedBox = page.getBleedBox();
+          const trimBox = page.getTrimBox();
+          const artBox = page.getArtBox();
+
+          const width = mediaBox.width;
+          const height = mediaBox.height;
+
+          const rotation =
+            ((page.getRotation().angle % 360) + 360) % 360;
+
+          const effectiveWidth =
+            rotation % 180 ? height : width;
+          const effectiveHeight =
+            rotation % 180 ? width : height;
+
+          const orientation =
+            effectiveWidth > effectiveHeight
+              ? "Landscape"
+              : effectiveWidth < effectiveHeight
+                ? "Portrait"
+                : "Square";
+
+          const info = {
+            page: index + 1,
+            widthPt: round(width),
+            heightPt: round(height),
+            widthMm: toMm(width),
+            heightMm: toMm(height),
+            orientation,
+            rotation,
+            aspectRatio: round(
+              effectiveWidth / effectiveHeight
+            ),
+            mediaBox,
+            cropBox,
+            bleedBox,
+            trimBox,
+            artBox
+          };
+
+          const tr = document.createElement("tr");
+
+          const values = [
+            info.page,
+            info.widthPt,
+            info.heightPt,
+            info.widthMm,
+            info.heightMm,
+            info.orientation,
+            `${info.rotation}°`,
+            info.aspectRatio
+          ];
+
+          values.forEach(value => {
+            const td = document.createElement("td");
+            td.textContent = value;
+            tr.appendChild(td);
+          });
+
+          tr.style.cursor = "pointer";
+          tr.addEventListener("click", () => {
+            details.textContent =
+              JSON.stringify(info, null, 2);
+          });
+
+          rows.appendChild(tr);
+        });
+      } catch (error) {
+        summary.textContent =
+          `Unable to inspect PDF: ${error.message}`;
+        table.hidden = true;
+      }
+    });
+  </script>
+</body>
+</html>
