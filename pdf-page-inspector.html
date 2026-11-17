@@ -79,7 +79,6 @@
     const table = document.getElementById("pageTable");
 
     const toMm = pt => +(pt * 25.4 / 72).toFixed(2);
-    const round = n => +n.toFixed(2);
 
     input.addEventListener("change", async event => {
       const file = event.target.files[0];
@@ -125,15 +124,13 @@
 
           const info = {
             page: index + 1,
-            widthPt: round(width),
-            heightPt: round(height),
+            widthPt: width,
+            heightPt: height,
             widthMm: toMm(width),
             heightMm: toMm(height),
             orientation,
             rotation,
-            aspectRatio: round(
-              effectiveWidth / effectiveHeight
-            ),
+            aspectRatio: effectiveWidth / effectiveHeight,
             mediaBox,
             cropBox,
             bleedBox,
