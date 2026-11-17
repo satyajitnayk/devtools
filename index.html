@@ -7,62 +7,62 @@
 
   <style>
 
-    body{
-      font-family: system-ui;
-      background:#f4f6fb;
-      margin:0;
-      padding:40px;
-    }
+      body {
+          font-family: system-ui;
+          background: #f4f6fb;
+          margin: 0;
+          padding: 40px;
+      }
 
-    .container{
-      max-width:900px;
-      margin:auto;
-    }
+      .container {
+          max-width: 900px;
+          margin: auto;
+      }
 
-    h1{
-      text-align:center;
-      margin-bottom:40px;
-    }
+      h1 {
+          text-align: center;
+          margin-bottom: 40px;
+      }
 
-    .category{
-      margin-bottom:40px;
-    }
+      .category {
+          margin-bottom: 40px;
+      }
 
-    .category h2{
-      margin-bottom:15px;
-      color:#333;
-    }
+      .category h2 {
+          margin-bottom: 15px;
+          color: #333;
+      }
 
-    .tools-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:15px;
-    }
+      .tools-grid {
+          display: grid;
+          grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+          gap: 15px;
+      }
 
-    .tool{
-      background:white;
-      padding:18px;
-      border-radius:10px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.08);
-      transition:all .15s;
-    }
+      .tool {
+          background: white;
+          padding: 18px;
+          border-radius: 10px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          transition: all .15s;
+      }
 
-    .tool:hover{
-      transform:translateY(-3px);
-      box-shadow:0 6px 14px rgba(0,0,0,0.12);
-    }
+      .tool:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+      }
 
-    .tool a{
-      text-decoration:none;
-      color:#2563eb;
-      font-weight:600;
-    }
+      .tool a {
+          text-decoration: none;
+          color: #2563eb;
+          font-weight: 600;
+      }
 
-    .tool small{
-      display:block;
-      margin-top:6px;
-      color:#666;
-    }
+      .tool small {
+          display: block;
+          margin-top: 6px;
+          color: #666;
+      }
 
   </style>
 </head>
@@ -73,6 +73,33 @@
 
   <h1>Developer Tools</h1>
 
+  <div class="category">
+    <h2>📄 Pdf Tools</h2>
+
+    <div class="tools-grid">
+      <div class="tool">
+        <a href="./pdf-widget-inspector.html">
+          <div class="title">PDF Widget Inspector</div>
+          <small>Debug PDF form widgets</small>
+        </a>
+      </div>
+
+      <div class="tool">
+        <a href="./pdf-page-inspector.html">
+          <div class="title">PDF Page Inspector</div>
+          <small>View PDF pages dimensions</small>
+        </a>
+      </div>
+
+      <div class="tool">
+        <a href="./draw-on-pdf/dist/index.html">
+          <div class="title">Draw On PDF</div>
+          <small>Overlay rectangles on PDF pages</small>
+        </a>
+      </div>
+    </div>
+  </div>
+  
   <div class="category">
     <h2>📄 Document Tools</h2>
 
@@ -104,26 +131,6 @@
           <small>List all fonts in DOCX document</small>
         </a>
       </div>
-
-      <div class="tool">
-        <a href="./pdf-widget-inspector.html">
-          <div class="title">PDF Widget Inspector</div>
-          <small>Debug PDF form widgets</small>
-        </a>
-      </div>
-
-      <div class="tool">
-        <a href="./pdf-page-inspector.html">
-          <div class="title">PDF Page Inspector</div>
-          <small>View PDF pages dimensions</small>
-        </a>
-      </div>
-
-      <div class="tool">
-        <a href="./draw-on-pdf/dist/index.html">
-          <div class="title">Draw On PDF</div>
-          <small>Overlay rectangles on PDF pages</small>
-        </a>
       </div>
     </div>
   </div>
@@ -149,7 +156,8 @@
       <div class="tool">
         <a href="./multipart-decoder/index.html">
           <div class="title">Multipart Decode Tool (use sample data present under)</div>
-          <small>Decode multipart/mixed responses, preview JSON parts, and download JSON or binary files directly in your browser.</small>
+          <small>Decode multipart/mixed responses, preview JSON parts, and download JSON or binary files directly in
+            your browser.</small>
         </a>
       </div>
     </div>
